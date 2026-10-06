@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SMS Spam Detection</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="glow glow-a"></div>
+  <div class="glow glow-b"></div>
+
+  <main>
+    <header>
+      <div class="logo" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="34" height="34" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 3l8 3v6c0 4.5-3.2 7.8-8 9-4.8-1.2-8-4.5-8-9V6l8-3z"/>
+          <path d="M8.5 12.2l2.4 2.4 4.6-4.8"/>
+        </svg>
+      </div>
+      <h1>SMS Spam Detection</h1>
+    </header>
+
+    <section class="card" id="card">
+      <label for="msg">Your message</label>
+      <textarea id="msg" maxlength="2000" placeholder="Paste or type an SMS here..."></textarea>
+      <div class="counter"><span id="count">0</span> / 2000</div>
+
+      <div class="row">
+        <button id="check" class="primary">Check message</button>
+        <button id="clear" type="button" class="ghost">Clear</button>
+      </div>
+
+      <div id="result" aria-live="polite">
+        <div class="gauge">
+          <svg viewBox="0 0 120 120" width="120" height="120">
+            <circle class="track" cx="60" cy="60" r="54"/>
+            <circle class="arc" id="arc" cx="60" cy="60" r="54"/>
+          </svg>
+          <div class="gauge-text"><span id="pct">0%</span></div>
+        </div>
+        <div class="result-info">
+          <p id="verdict" class="verdict"></p>
+          <p id="meta" class="meta"></p>
+        </div>
+      </div>
+
+      <p id="error" class="error" role="alert"></p>
+    </section>
+  </main>
+
+<script>
+  const $ = (id) => document.getElementById(id);
+  const msg = $("msg"), btn = $("check"), card = $("card");
+  const CIRC = 2 * Math.PI * 54;
+
+  $("arc").style.strokeDasharray = CIRC;
+  $("arc").style.strokeDashoffset = CIRC;
+
+  msg.addEventListener("input", () => { $("count").textContent = msg.value.length; });
+
+  function setGauge(p) {
+    $("arc").style.strokeDashoffset = CIRC * (1 - p);
+    $("pct").textContent = Math.round(p * 100) + "%";
+  }
+
+  async function check() {
+    $("error").textContent = "";
+    const message = msg.value.trim();
+    if (!message) { $("error").textContent = "Type or paste a message first."; return; }
+    btn.disabled = true; btn.textContent = "Checking...";
+    try {
+      const res = await fetch("/predict", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Something went wrong.");
+
+      const spam = data.label === "spam";
+      const confidence = spam ? data.spam_probability : 1 - data.spam_probability;
+      const confPct = (confidence * 100).toFixed(1);
+
+      card.classList.remove("is-spam", "is-ham");
+      card.classList.add(spam ? "is-spam" : "is-ham");
+      $("verdict").textContent = spam ? "Spam detected" : "Looks safe";
+      $("meta").textContent = spam
+        ? "Spam with " + confPct + "% confidence. Do not click links or reply."
+        : "Not spam with " + confPct + "% confidence.";
+      $("result").classList.add("show");
+      setGauge(0);
+      requestAnimationFrame(() => requestAnimationFrame(() => setGauge(confidence)));
+    } catch (e) {
+      $("error").textContent = e.message + " Check that the Flask server is running.";
+    } finally {
+      btn.disabled = false; btn.textContent = "Check message";
+    }
+  }
+
+  btn.addEventListener("click", check);
+  msg.addEventListener("keydown", (e) => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) check(); });
+  $("clear").addEventListener("click", () => {
+    msg.value = ""; $("count").textContent = "0";
+    $("result").classList.remove("show");
+    card.classList.remove("is-spam", "is-ham");
+    $("error").textContent = ""; msg.focus();
+  });
+</script>
+</body>
+</html>
