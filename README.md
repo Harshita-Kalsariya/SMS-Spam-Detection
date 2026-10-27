@@ -34,3 +34,7 @@ cd ../backend && python app.py                         # open http://127.0.0.1:5
 
 ## Results
 Add your final numbers here after running the notebook (accuracy, spam precision, spam recall, F1).
+
+
+![alt text](image.png)
+![alt text](image-1.png)
