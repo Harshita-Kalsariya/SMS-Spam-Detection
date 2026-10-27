@@ -1,5 +1,7 @@
 # SMS Spam Detector
 
+SMS Spam Detector deployment :-> https://sms-spam-detection-cu7o.onrender.com
+
 End-to-end text classification project: **TF-IDF + Logistic Regression / Naive Bayes** trained on the SMS Spam Collection dataset (Kaggle), served through a **Flask** API with a clean web UI.
 
 ## Project structure
@@ -36,5 +38,8 @@ cd ../backend && python app.py                         # open http://127.0.0.1:5
 Add your final numbers here after running the notebook (accuracy, spam precision, spam recall, F1).
 
 
-![alt text](image.png)
-![alt text](image-1.png)
+## Project Screenshots
+
+![SMS Spam Detector Screenshot](image.png)
+
+![SMS Spam Detector Screenshot](image-1.png)
